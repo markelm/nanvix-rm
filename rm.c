@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 /* Software versioning. */
 #define VERSION_MAJOR 1 /* Major version. */
@@ -79,14 +80,19 @@ int rm(const char *pathname)
                 strncpy(filename, dp->d_name, NAME_MAX);
 
                 /* Suppress entries starting with dot. */
-                if ((filename[0] == '.') && !(ls_flags & LS_ALL))
+                if ((filename[0] == '.') && !(ls_flags & LS_ALL)){
                         continue;
+		}
 
                 /* Print inode number. */
-                if (ls_flags & LS_INODE)
+                if (ls_flags & LS_INODE){
                         printf("%d ", (int)dp->d_ino);
-                
-                unlink(filename);
+		}
+
+		char * path = (char*) malloc(1);
+		strcpy(path, pathname);
+		char * to_delete = strcat(path, filename);
+		unlink(to_delete);
         }
         closedir(dirp);
         
@@ -151,7 +157,9 @@ static void getargs(int argc, char *const argv[])
 			args.flag = 1;
 		}
 		else {
+			
 			args.filename = arg;
+			
 		}
 	}
 	
@@ -176,8 +184,9 @@ int main(int argc, char *const argv[])
 	/* Failed to unlink(). */
 	if (unlink(args.filename) < 0)
 	{
-		int s = stat(filename, &st);
+		stat(args.filename, &st);
 		if(S_ISDIR(st.st_mode) && args.flag == 1){
+			
 			rm(args.filename);
 			return (EXIT_SUCCESS);
 
